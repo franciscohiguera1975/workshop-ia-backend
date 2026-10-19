@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from .. import rag
-from ..agent import run_agent
+from ..mcp_client import run_agent_with_mcp
 from ..skills import select_skill
 
 router = APIRouter()
@@ -59,7 +59,7 @@ def get_documents():
 
 
 @router.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest) -> ChatResponse:
+async def chat(request: ChatRequest) -> ChatResponse:
     messages = [{"role": m.role, "content": m.content} for m in request.history]
 
     skill = select_skill(request.message)
@@ -68,15 +68,8 @@ def chat(request: ChatRequest) -> ChatResponse:
         messages.insert(0, {"role": "system", "content": skill["instructions"]})
         skill_used = SkillUsed(name=skill["name"], reason=f'Palabras clave de "{skill["name"]}" detectadas.')
 
-    retrieved = rag.search(request.message)
-    sources = None
-    if retrieved:
-        context = "\n\n".join(f'[{d["title"]}] {d["text"]}' for d in retrieved)
-        messages.insert(0, {"role": "system", "content": f"Usa este contexto si es relevante:\n\n{context}"})
-        sources = [Source(title=d["title"], snippet=d["text"], score=d["score"]) for d in retrieved]
-
     messages.append({"role": "user", "content": request.message})
-    reply, trace = run_agent(messages)
+    reply, trace = await run_agent_with_mcp(messages)
 
     tool_calls = [ToolCall(**t) for t in trace] if trace else None
-    return ChatResponse(reply=reply, skill_used=skill_used, sources=sources, tool_calls=tool_calls)
+    return ChatResponse(reply=reply, skill_used=skill_used, tool_calls=tool_calls)
