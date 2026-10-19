@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from .. import rag
-from ..llm_client import get_llm_client
+from ..agent import run_agent
 from ..skills import select_skill
 
 router = APIRouter()
@@ -29,10 +29,17 @@ class Source(BaseModel):
     score: float | None = None
 
 
+class ToolCall(BaseModel):
+    name: str
+    args: dict | None = None
+    result: str | None = None
+
+
 class ChatResponse(BaseModel):
     reply: str
     skill_used: SkillUsed | None = None
     sources: list[Source] | None = None
+    tool_calls: list[ToolCall] | None = None
 
 
 class DocumentIn(BaseModel):
@@ -53,29 +60,23 @@ def get_documents():
 
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
-    client = get_llm_client()
     messages = [{"role": m.role, "content": m.content} for m in request.history]
 
     skill = select_skill(request.message)
     skill_used = None
     if skill:
         messages.insert(0, {"role": "system", "content": skill["instructions"]})
-        skill_used = SkillUsed(
-            name=skill["name"],
-            reason=f'Se detectaron las palabras clave de "{skill["name"]}" en tu mensaje.',
-        )
+        skill_used = SkillUsed(name=skill["name"], reason=f'Palabras clave de "{skill["name"]}" detectadas.')
 
     retrieved = rag.search(request.message)
     sources = None
     if retrieved:
         context = "\n\n".join(f'[{d["title"]}] {d["text"]}' for d in retrieved)
-        messages.insert(0, {
-            "role": "system",
-            "content": f"Usa el siguiente contexto si es relevante. Si no, ignóralo.\n\n{context}",
-        })
+        messages.insert(0, {"role": "system", "content": f"Usa este contexto si es relevante:\n\n{context}"})
         sources = [Source(title=d["title"], snippet=d["text"], score=d["score"]) for d in retrieved]
 
     messages.append({"role": "user", "content": request.message})
-    reply = client.chat(messages)
+    reply, trace = run_agent(messages)
 
-    return ChatResponse(reply=reply, skill_used=skill_used, sources=sources)
+    tool_calls = [ToolCall(**t) for t in trace] if trace else None
+    return ChatResponse(reply=reply, skill_used=skill_used, sources=sources, tool_calls=tool_calls)

@@ -1,6 +1,16 @@
+import json
+from dataclasses import dataclass, field
+
 from openai import OpenAI
 
 from .config import get_settings
+
+
+@dataclass
+class ToolCallResult:
+    content: str | None
+    tool_calls: list[dict] = field(default_factory=list)
+    raw_tool_calls: list | None = None
 
 
 class OpenAICompatibleClient:
@@ -18,6 +28,33 @@ class OpenAICompatibleClient:
             model=self._model, messages=messages
         )
         return response.choices[0].message.content or ""
+
+    def chat_with_tools(self, messages: list[dict], tools: list[dict]) -> ToolCallResult:
+        response = self._client.chat.completions.create(
+            model=self._model, messages=messages, tools=tools
+        )
+        message = response.choices[0].message
+
+        if not message.tool_calls:
+            return ToolCallResult(content=message.content or "")
+
+        calls = [
+            {
+                "id": tc.id,
+                "name": tc.function.name,
+                "arguments": json.loads(tc.function.arguments or "{}"),
+            }
+            for tc in message.tool_calls
+        ]
+        raw = [
+            {
+                "id": tc.id,
+                "type": "function",
+                "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+            }
+            for tc in message.tool_calls
+        ]
+        return ToolCallResult(content=message.content, tool_calls=calls, raw_tool_calls=raw)
 
 
 def get_llm_client() -> OpenAICompatibleClient:
