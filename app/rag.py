@@ -32,3 +32,17 @@ def search(query: str, top_k: int = 2) -> list[dict]:
         {"title": r["title"], "text": r["text"], "score": round(1 / (1 + r["_distance"]), 3)}
         for r in results
     ]
+
+
+def inspect_vectors(limit: int = 5) -> list[dict]:
+    """Para ver cómo queda un documento después de convertirlo a embeddings
+    (dimensión real del vector + sus primeros valores), no para uso en /chat."""
+    rows = _table.to_arrow().to_pylist()[:limit]
+    return [
+        {
+            "title": r["title"],
+            "vector_dim": len(r["vector"]),
+            "vector_preview": list(r["vector"][:8]),
+        }
+        for r in rows
+    ]
