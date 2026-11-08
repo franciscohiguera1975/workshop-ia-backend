@@ -2,6 +2,7 @@ from mcp.server.mcpserver import MCPServer
 
 from app.tools import calculate, get_clima
 from app.rag import search as rag_search
+from app.sheets_client import append_row
 
 mcp = MCPServer("workshop-tools")
 
@@ -14,7 +15,7 @@ def calcular(expression: str) -> str:
 
 @mcp.tool()
 def clima(ciudad: str) -> str:
-    """Devuelve el clima actual (simulado) de una ciudad."""
+    """Devuelve el clima actual real de una ciudad (Open-Meteo)."""
     return get_clima(ciudad)
 
 
@@ -25,6 +26,12 @@ def buscar_documentos(consulta: str) -> str:
     if not results:
         return "No se encontraron documentos relevantes."
     return "\n\n".join(f'[{r["title"]}] {r["text"]}' for r in results)
+
+
+@mcp.tool()
+def agregar_fila_sheet(spreadsheet_id: str, valores: list[str]) -> str:
+    """Agrega una fila al final de una hoja de Google Sheets. `valores` es la lista de celdas de la fila."""
+    return append_row(spreadsheet_id, valores)
 
 
 if __name__ == "__main__":

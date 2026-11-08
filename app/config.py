@@ -18,6 +18,7 @@ class Settings:
     embedding_model: str
     embedding_dim: int
     gmail_token_path: str
+    google_service_account_path: str
 
 
 def get_settings() -> Settings:
@@ -32,4 +33,7 @@ def get_settings() -> Settings:
         embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
         embedding_dim=int(os.getenv("EMBEDDING_DIM", "1536")),
         gmail_token_path=os.getenv("GMAIL_TOKEN_PATH", "credentials/gmail_token.json"),
+        google_service_account_path=os.getenv(
+            "GOOGLE_SERVICE_ACCOUNT_PATH", "credentials/google_service_account.json"
+        ),
     )
