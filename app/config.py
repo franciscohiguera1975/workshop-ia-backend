@@ -19,5 +19,5 @@ def get_settings() -> Settings:
         llm_provider=os.getenv("LLM_PROVIDER", "groq"),
         llm_base_url=os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1"),
         llm_api_key=os.getenv("LLM_API_KEY", ""),
-        llm_model=os.getenv("LLM_MODEL", "llama-3.3-70b-versatile"),
+        llm_model=os.getenv("LLM_MODEL", "openai/gpt-oss-20b"),
     )
