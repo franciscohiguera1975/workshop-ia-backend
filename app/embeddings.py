@@ -31,6 +31,14 @@ def get_embedding_function():
     settings = get_settings()
     registry = get_registry()
 
+    if settings.embedding_provider == "local":
+        # sentence-transformers: corre en esta máquina, sin API key ni
+        # costo. Es la función nativa de LanceDB, no la de arriba.
+        return registry.get("sentence-transformers").create(
+            name=settings.embedding_model,
+            device="cpu",
+        )
+
     return registry.get("openai_compatible_embeddings").create(
         name=settings.embedding_model,
         base_url=settings.embedding_base_url,
