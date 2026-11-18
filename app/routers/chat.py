@@ -51,6 +51,11 @@ def get_documents():
     return rag.list_documents()
 
 
+@router.get("/search")
+def search_documents(q: str):
+    return rag.search(q)
+
+
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     client = get_llm_client()
