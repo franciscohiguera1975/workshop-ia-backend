@@ -27,11 +27,11 @@ def get_settings() -> Settings:
         llm_base_url=os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1"),
         llm_api_key=os.getenv("LLM_API_KEY", ""),
         llm_model=os.getenv("LLM_MODEL", "openai/gpt-oss-20b"),
-        embedding_provider=os.getenv("EMBEDDING_PROVIDER", "openai"),
+        embedding_provider=os.getenv("EMBEDDING_PROVIDER", "local"),
         embedding_base_url=os.getenv("EMBEDDING_BASE_URL", "https://api.openai.com/v1"),
         embedding_api_key=os.getenv("EMBEDDING_API_KEY", ""),
-        embedding_model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
-        embedding_dim=int(os.getenv("EMBEDDING_DIM", "1536")),
+        embedding_model=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
+        embedding_dim=int(os.getenv("EMBEDDING_DIM", "384")),
         gmail_token_path=os.getenv("GMAIL_TOKEN_PATH", "credentials/gmail_token.json"),
         google_service_account_path=os.getenv(
             "GOOGLE_SERVICE_ACCOUNT_PATH", "credentials/google_service_account.json"
